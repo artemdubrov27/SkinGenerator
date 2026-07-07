@@ -1,0 +1,3 @@
+server/model/*.onnx
+server/model/weights/*.pth
+*.onnx.data
