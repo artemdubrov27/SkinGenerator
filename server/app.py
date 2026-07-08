@@ -1,60 +1,67 @@
 import os
 import requests
-import numpy as np
 import onnxruntime as ort
-from fastapi import FastAPI, UploadFile, File
+from fastapi import FastAPI, File, UploadFile
 from fastapi.responses import JSONResponse
 from PIL import Image
+import io
 
 app = FastAPI()
 
-# === Шлях до моделі ===
 MODEL_PATH = "server/model/unet64.onnx"
-MODEL_URL = "https://drive.google.com/uc?export=download&id=1QAOWBaJY5f7Gng2yzRjiMmLMkyid46Md" #Google Drive ID
+MODEL_DATA_PATH = "server/model/unet64.onnx.data"
 
-# === Завантаження моделі з Google Drive, якщо її немає ===
+# Посилання на Google Drive
+MODEL_URL = "https://drive.google.com/uc?export=download&id=1lwUuc_auK2Pfn1paDD60Jl8dhQnwbBXt"
+MODEL_DATA_URL = "https://drive.google.com/uc?export=download&id=1gUxZqXZ5D-GJqzDFZGDBU7EYLYt_aaqU"
+
 def download_model():
+    os.makedirs(os.path.dirname(MODEL_PATH), exist_ok=True)
+
+    # Завантаження структури моделі
     if not os.path.exists(MODEL_PATH):
-        print("Downloading model from Google Drive...")
+        print("Downloading model structure...")
         r = requests.get(MODEL_URL)
-        os.makedirs(os.path.dirname(MODEL_PATH), exist_ok=True)
         with open(MODEL_PATH, "wb") as f:
             f.write(r.content)
-        print("✅ Model downloaded successfully.")
 
+    # Завантаження ваг моделі
+    if not os.path.exists(MODEL_DATA_PATH):
+        print("Downloading model weights...")
+        r = requests.get(MODEL_DATA_URL)
+        with open(MODEL_DATA_PATH, "wb") as f:
+            f.write(r.content)
+
+    print("✅ Model downloaded successfully.")
+
+# Завантаження моделі при старті
 download_model()
 
-# === Ініціалізація ONNX Runtime ===
 try:
     session = ort.InferenceSession(MODEL_PATH)
-    model_loaded = True
+    print("✅ Model loaded successfully.")
 except Exception as e:
-    print("❌ Error loading model:", e)
-    model_loaded = False
+    print(f"❌ Error loading model: {e}")
+    session = None
 
-# === Ендпоінт для перевірки статусу моделі ===
 @app.get("/model_status")
 def model_status():
-    if model_loaded:
+    if session:
         return {"model": "loaded"}
     else:
         return {"model": "error"}
 
-# === Ендпоінт для передбачення ===
 @app.post("/predict")
 async def predict(file: UploadFile = File(...)):
-    if not model_loaded:
+    if not session:
         return JSONResponse(content={"error": "Model not loaded"}, status_code=500)
 
-    # Завантажуємо зображення
-    image = Image.open(file.file).convert("RGB")
-    image = image.resize((128, 128))  # модель очікує 128x128
-    input_data = np.array(image).astype(np.float32).transpose(2, 0, 1) / 255.0
-    input_data = np.expand_dims(input_data, axis=0)
+    image_bytes = await file.read()
+    image = Image.open(io.BytesIO(image_bytes)).convert("RGB")
+    image = image.resize((512, 512))
+    img_array = (torch.tensor(np.array(image)).permute(2, 0, 1).unsqueeze(0).float()) / 255.0
 
-    # Запускаємо inference
-    outputs = session.run(None, {session.get_inputs()[0].name: input_data})
-    prediction = outputs[0]
+    outputs = session.run(None, {"input": img_array.numpy()})
+    result = outputs[0].tolist()
 
-    return {"output_shape": str(prediction.shape)}
-
+    return {"prediction": result}
