@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 
-# --- Your U-Net model definition ---
+# --- Визначення моделі U-Net (спрощена версія) ---
 class UNet(nn.Module):
     def __init__(self):
         super(UNet, self).__init__()
@@ -16,22 +16,27 @@ class UNet(nn.Module):
         x3 = self.dec1(x2)
         return self.out(x3)
 
-# --- Load your trained weights if you have them ---
+# --- Ініціалізація моделі ---
 model = UNet()
-# model.load_state_dict(torch.load("model.pth", map_location="cpu"))
+# Якщо є навчені ваги, завантаж їх:
+# model.load_state_dict(torch.load("server/model/weights/unet64.pth", map_location="cpu"))
 
 model.eval()
 
+# --- Приклад вхідного тензора ---
 dummy_input = torch.randn(1, 3, 64, 64)
 
+# --- Експорт у ONNX ---
 torch.onnx.export(
     model,
     dummy_input,
     "unet64.onnx",
+    opset_version=18,           # сучасний opset
+    export_params=True,         # включає ваги у сам файл .onnx
+    do_constant_folding=True,   # оптимізація
     input_names=["input"],
     output_names=["output"],
-    opset_version=18
-    use_external_data_format=False
+    dynamic_axes={"input": {0: "batch_size"}, "output": {0: "batch_size"}}
 )
 
-print("Exported to unet64.onnx")
+print("✅ Exported to unet64.onnx")
