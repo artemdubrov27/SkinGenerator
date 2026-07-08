@@ -5,6 +5,8 @@ from fastapi import FastAPI, File, UploadFile
 from fastapi.responses import JSONResponse
 from PIL import Image
 import io
+import numpy as np
+import torch
 
 app = FastAPI()
 
@@ -15,22 +17,26 @@ MODEL_DATA_PATH = "server/model/unet64.onnx.data"
 MODEL_URL = "https://drive.google.com/uc?export=download&id=1lwUuc_auK2Pfn1paDD60Jl8dhQnwbBXt"
 MODEL_DATA_URL = "https://drive.google.com/uc?export=download&id=1gUxZqXZ5D-GJqzDFZGDBU7EYLYt_aaqU"
 
+def download_file(url, destination):
+    """Надійне завантаження великих файлів з Google Drive"""
+    print(f"Downloading {destination}...")
+    with requests.Session() as session:
+        response = session.get(url, params={"confirm": "t"}, stream=True)
+        response.raise_for_status()
+        with open(destination, "wb") as f:
+            for chunk in response.iter_content(chunk_size=8192):
+                if chunk:
+                    f.write(chunk)
+    print(f"✅ Downloaded {destination}")
+
 def download_model():
     os.makedirs(os.path.dirname(MODEL_PATH), exist_ok=True)
 
-    # Завантаження структури моделі
     if not os.path.exists(MODEL_PATH):
-        print("Downloading model structure...")
-        r = requests.get(MODEL_URL)
-        with open(MODEL_PATH, "wb") as f:
-            f.write(r.content)
+        download_file(MODEL_URL, MODEL_PATH)
 
-    # Завантаження ваг моделі
     if not os.path.exists(MODEL_DATA_PATH):
-        print("Downloading model weights...")
-        r = requests.get(MODEL_DATA_URL)
-        with open(MODEL_DATA_PATH, "wb") as f:
-            f.write(r.content)
+        download_file(MODEL_DATA_URL, MODEL_DATA_PATH)
 
     print("✅ Model downloaded successfully.")
 
