@@ -10,7 +10,7 @@ app = FastAPI()
 
 # === Шлях до моделі ===
 MODEL_PATH = "server/model/unet64.onnx"
-MODEL_URL = "https://drive.google.com/uc?export=download&id=1gKnDi6EsNQKre4XzVoNIqj781szhTV4t"  # <-- твій Google Drive ID
+MODEL_URL = "https://drive.google.com/file/d/1gKnDi6EsNQKre4XzVoNIqj781szhTV4t/view?usp=sharing"  # <-- твій Google Drive ID
 
 # === Завантаження моделі з Google Drive, якщо її немає ===
 def download_model():
