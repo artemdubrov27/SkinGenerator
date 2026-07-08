@@ -31,6 +31,7 @@ torch.onnx.export(
     input_names=["input"],
     output_names=["output"],
     opset_version=18
+    use_external_data_format=False
 )
 
 print("Exported to unet64.onnx")
