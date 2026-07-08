@@ -5,3 +5,4 @@ torchvision
 onnxruntime
 pillow
 requests
+python-multipart
