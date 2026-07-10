@@ -1,5 +1,5 @@
 import os
-import requests
+import gdown
 import onnxruntime as ort
 from fastapi import FastAPI, File, UploadFile
 from fastapi.responses import JSONResponse
@@ -13,30 +13,20 @@ app = FastAPI()
 MODEL_PATH = "server/model/unet64.onnx"
 MODEL_DATA_PATH = "server/model/unet64.onnx.data"
 
-# Посилання на Google Drive
-MODEL_URL = "https://drive.google.com/uc?export=download&id=1lwUuc_auK2Pfn1paDD60Jl8dhQnwbBXt"
-MODEL_DATA_URL = "https://drive.google.com/uc?export=download&id=1gUxZqXZ5D-GJqzDFZGDBU7EYLYt_aaqU"
-
-def download_file(url, destination):
-    """Надійне завантаження великих файлів з Google Drive"""
-    print(f"Downloading {destination}...")
-    with requests.Session() as session:
-        response = session.get(url, params={"confirm": "t"}, stream=True)
-        response.raise_for_status()
-        with open(destination, "wb") as f:
-            for chunk in response.iter_content(chunk_size=8192):
-                if chunk:
-                    f.write(chunk)
-    print(f"✅ Downloaded {destination}")
+# Посилання на Google Drive (id)
+MODEL_URL = "https://drive.google.com/uc?id=1lwUuc_auK2Pfn1paDD60Jl8dhQnwbBXt"
+MODEL_DATA_URL = "https://drive.google.com/uc?id=1gUxZqXZ5D-GJqzDFZGDBU7EYLYt_aaqU"
 
 def download_model():
     os.makedirs(os.path.dirname(MODEL_PATH), exist_ok=True)
 
     if not os.path.exists(MODEL_PATH):
-        download_file(MODEL_URL, MODEL_PATH)
+        print("Downloading model structure...")
+        gdown.download(MODEL_URL, MODEL_PATH, quiet=False)
 
     if not os.path.exists(MODEL_DATA_PATH):
-        download_file(MODEL_DATA_URL, MODEL_DATA_PATH)
+        print("Downloading model weights...")
+        gdown.download(MODEL_DATA_URL, MODEL_DATA_PATH, quiet=False)
 
     print("✅ Model downloaded successfully.")
 

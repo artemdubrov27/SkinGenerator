@@ -6,3 +6,4 @@ onnxruntime
 pillow
 requests
 python-multipart
+gdown==5.1.0
