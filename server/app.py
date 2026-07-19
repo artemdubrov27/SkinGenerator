@@ -18,6 +18,7 @@ MODEL_URL = "https://drive.google.com/uc?id=1lwUuc_auK2Pfn1paDD60Jl8dhQnwbBXt"
 MODEL_DATA_URL = "https://drive.google.com/uc?id=1gUxZqXZ5D-GJqzDFZGDBU7EYLYt_aaqU"
 
 def download_model():
+    """Завантажує структуру та ваги моделі, якщо їх немає локально."""
     os.makedirs(os.path.dirname(MODEL_PATH), exist_ok=True)
 
     if not os.path.exists(MODEL_PATH):
@@ -42,20 +43,22 @@ except Exception as e:
 
 @app.get("/model_status")
 def model_status():
+    """Перевіряє, чи модель завантажена."""
     if session:
         return {"model": "loaded"}
     else:
         return {"model": "error"}
 
-# Старий ендпоінт (залишаємо для тестів)
 @app.post("/predict")
 async def predict(file: UploadFile = File(...)):
+    """Старий ендпоінт: повертає масив чисел після прогону через модель."""
     if not session:
         return JSONResponse(content={"error": "Model not loaded"}, status_code=500)
 
     image_bytes = await file.read()
     image = Image.open(io.BytesIO(image_bytes)).convert("RGB")
     image = image.resize((512, 512))
+
     arr = (np.array(image).astype(np.float32) / 255.0).transpose(2, 0, 1)
     arr = np.expand_dims(arr, axis=0)
 
@@ -64,9 +67,9 @@ async def predict(file: UploadFile = File(...)):
 
     return {"prediction": result}
 
-# Новий ендпоінт для генерації PNG‑скіну
 @app.post("/generate_skin")
 async def generate_skin(file: UploadFile = File(...)):
+    """Новий ендпоінт: повертає готовий PNG-скін."""
     if not session:
         return JSONResponse(content={"error": "Model not loaded"}, status_code=500)
 
