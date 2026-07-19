@@ -1,9 +1,8 @@
 fastapi
 uvicorn
-torch
-torchvision
 onnxruntime
 pillow
+numpy
 requests
 python-multipart
 gdown==5.1.0
