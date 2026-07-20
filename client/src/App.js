@@ -1,29 +1,7 @@
 import React, { useState } from "react";
 import { Canvas } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
-import { useLoader } from "@react-three/fiber";
-import { TextureLoader } from "three";
-
-// Старий куб (залишаємо для тесту сцени)
-function Box() {
-  return (
-    <mesh>
-      <boxGeometry args={[1, 1, 1]} />
-      <meshStandardMaterial color="orange" />
-    </mesh>
-  );
-}
-
-// Новий куб із текстурою скіна
-function SkinBox({ url }) {
-  const texture = useLoader(TextureLoader, url);
-  return (
-    <mesh>
-      <boxGeometry args={[1, 1, 1]} />
-      <meshStandardMaterial map={texture} />
-    </mesh>
-  );
-}
+import MinecraftCharacter from "./components/MinecraftCharacter";
 
 function App() {
   const [selectedFile, setSelectedFile] = useState(null);
@@ -57,18 +35,10 @@ function App() {
       <input type="file" onChange={handleFileUpload} />
       <button onClick={handleGenerate}>Generate Skin</button>
 
-      {skinUrl && (
-        <div>
-          <h2>Generated Skin:</h2>
-          <img src={skinUrl} alt="Generated Skin" style={{ maxWidth: "300px" }} />
-        </div>
-      )}
-
-      <Canvas style={{ height: "400px", marginTop: "20px" }}>
+      <Canvas style={{ height: "500px", marginTop: "20px" }}>
         <ambientLight />
         <pointLight position={[10, 10, 10]} />
-        {/* Якщо є скін — показуємо його, інакше старий куб */}
-        {skinUrl ? <SkinBox url={skinUrl} /> : <Box />}
+        {skinUrl ? <MinecraftCharacter url={skinUrl} /> : null}
         <OrbitControls />
       </Canvas>
     </div>
