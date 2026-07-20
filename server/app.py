@@ -3,12 +3,17 @@ import gdown
 import onnxruntime as ort
 from fastapi import FastAPI, File, UploadFile
 from fastapi.responses import JSONResponse, FileResponse
+from fastapi.staticfiles import StaticFiles
 from PIL import Image
 import io
 import numpy as np
 import uuid
 
 app = FastAPI()
+
+# Папка для збереження результатів
+OUTPUT_DIR = "server/static"
+os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 MODEL_PATH = "server/model/unet64.onnx"
 MODEL_DATA_PATH = "server/model/unet64.onnx.data"
@@ -69,7 +74,7 @@ async def predict(file: UploadFile = File(...)):
 
 @app.post("/generate_skin")
 async def generate_skin(file: UploadFile = File(...)):
-    """Новий ендпоінт: повертає готовий PNG-скін."""
+    """Новий ендпоінт: повертає URL готового PNG-скіну."""
     if not session:
         return JSONResponse(content={"error": "Model not loaded"}, status_code=500)
 
@@ -86,6 +91,10 @@ async def generate_skin(file: UploadFile = File(...)):
 
     skin = Image.fromarray(result)
     filename = f"skin_{uuid.uuid4().hex}.png"
-    skin.save(filename)
+    filepath = os.path.join(OUTPUT_DIR, filename)
+    skin.save(filepath)
 
-    return FileResponse(filename, media_type="image/png")
+    return {"skin_url": f"/static/{filename}"}
+
+# Додаємо статичні файли
+app.mount("/static", StaticFiles(directory=OUTPUT_DIR), name="static")
