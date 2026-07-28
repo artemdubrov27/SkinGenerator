@@ -18,7 +18,7 @@ function App() {
     formData.append("file", selectedFile);
 
     try {
-      const res = await fetch("http://127.0.0.1:8000/generate_skin", {
+      const res = await fetch("https://skingenerator.onrender.com/generate_skin", {
         method: "POST",
         body: formData,
       });
